@@ -2,6 +2,8 @@
 
 > rco-a2a.ai — Regulatory Compliance Object resolver for AI Agents. Signed, versioned, per-jurisdiction compliance state. mcp.rco-a2a.ai
 
+**Owner of record:** Agentic KG Holdings (the Agentic Private Office, github.com/Agentic-Private-Office), from 2026-10-23. Any CEO-led company may read and write receipts; no fee; no exclusivity. The door, hostnames and keys are unchanged.
+
 A Regulatory Compliance Object (RCO) is the signed, deterministic, machine-verifiable compliance state of one object in one jurisdiction: a GTIN in an SM-ECO-10060 member node, resolved upstream against that jurisdiction's versioned rule set and served as one record with one signal and one state. Agents consume the result of the rules, not the rules themselves. The record names the rule set it was resolved under (id, version, hash), the evidence it rests on, the issuer and the key that signed it; the agent reads the record, verifies the signature, and acts. Nothing is resolved at request time and nothing is narrative.
 
 Canonical endpoint: https://mcp.rco-a2a.ai/mcp (streamable-http, no auth on the read tools, typed errors).
@@ -42,7 +44,7 @@ The full 19-territory pull for the elyssah case study, with the re-cut script, l
 
 https://rco-a2a.ai · https://rco-a2a-bpc.ai (GSC rail) · https://rco-a2a-cpg.ai (partner rail) · https://status.rco-a2a.ai · https://dpuone.ai/.well-known/jwks.json · https://consortium-10060.org/issuers.json · https://sm-eco-10060.org · https://acm-68000.org
 
-Registry listing: `io.github.greencore-solutions/rco-a2a`. Anthropic connector directory: rco-a2a.
+Registry listing: `io.github.agentic-private-office/rco-a2a` (from 2026-10-23; the earlier `io.github.greencore-solutions/rco-a2a` entry stays, immutable, on the same door). Anthropic connector directory: rco-a2a.
 
 ---
 

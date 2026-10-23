@@ -1,12 +1,12 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.greencore-solutions/rco-a2a",
+  "name": "io.github.agentic-private-office/rco-a2a",
   "title": "RCO-A2A - Regulatory Compliance Objects",
   "description": "Signed, deterministic compliance state per object per jurisdiction, resolved upstream",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "websiteUrl": "https://rco-a2a.ai",
   "repository": {
-    "url": "https://github.com/greencore-solutions/rco-a2a",
+    "url": "https://github.com/Agentic-Private-Office/rco-a2a",
     "source": "github"
   },
   "remotes": [
