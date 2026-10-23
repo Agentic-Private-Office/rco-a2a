@@ -44,7 +44,7 @@ The full 19-territory pull for the elyssah case study, with the re-cut script, l
 
 https://rco-a2a.ai · https://rco-a2a-bpc.ai (GSC rail) · https://rco-a2a-cpg.ai (partner rail) · https://status.rco-a2a.ai · https://dpuone.ai/.well-known/jwks.json · https://consortium-10060.org/issuers.json · https://sm-eco-10060.org · https://acm-68000.org
 
-Registry listing: `io.github.agentic-private-office/rco-a2a` (from 2026-10-23; the earlier `io.github.greencore-solutions/rco-a2a` entry stays, immutable, on the same door). Anthropic connector directory: rco-a2a.
+Registry listing: `io.github.Agentic-Private-Office/rco-a2a` (from 2026-10-23; the earlier `io.github.greencore-solutions/rco-a2a` entry stays, immutable, on the same door). Anthropic connector directory: rco-a2a.
 
 ---
 
