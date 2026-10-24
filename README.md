@@ -2,7 +2,7 @@
 
 > rco-a2a.ai — RCO, the Record of Cleared Orders: the signed receipt of one cleared decision, read by decision id. mcp.rco-a2a.ai
 
-**Owner of record:** Agentic KG Holdings (the Agentic Private Office, github.com/Agentic-Private-Office), from 2026-10-23. The standard is MIT-licensed and implemented by any CEO-led company's doors. Reads are free; write keys are issued by the office at no charge to implementers.
+**Owner of record:** Agentic KG Holdings (the Agentic Private Office, github.com/Agentic-Private-Office), from 2026-10-23. The standard is MIT-licensed and implemented by both companies' doors (GreenCore Solutions Corp. and Allooloo Technologies Corp.), and by any licensed firm's agent with a write key. Reads are free; write keys are issued by the office at no charge to implementers.
 
 RCO is the Record of Cleared Orders: a signed, machine-verifiable record of one cleared decision. When an agent's door clears a decision — an issuer resolved, a product cleared under a rule, a signal returned — it leaves one receipt. The receipt is the thing a compliance officer is asked for, and the thing a licensed participant's agent must be able to produce. The standard's page is https://rco-10060.org/.
 
