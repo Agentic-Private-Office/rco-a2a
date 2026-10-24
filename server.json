@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Agentic-Private-Office/rco-a2a",
-  "title": "RCO-A2A - Regulatory Compliance Objects",
-  "description": "Signed, deterministic compliance state per object per jurisdiction, resolved upstream",
-  "version": "1.0.3",
+  "title": "RCO-A2A - Record of Cleared Orders",
+  "description": "The signed receipt of one cleared decision, read by decision id: RCO, the Record of Cleared Orders",
+  "version": "1.0.4",
   "websiteUrl": "https://rco-a2a.ai",
   "repository": {
     "url": "https://github.com/Agentic-Private-Office/rco-a2a",
