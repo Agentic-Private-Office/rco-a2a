@@ -32,7 +32,7 @@ One schema for every object type. No caller data, no personal data, no amounts.
 | Tool | Who | What it does |
 | --- | --- | --- |
 | `get_receipt(decision_id)` | anyone, no account | Return the signed receipt of one cleared decision. |
-| `write_receipt(receipt)` | authorised doors (a key issued by the office) | Write a receipt: the door verifies the issuer's signature against its keyring, writes the hash to the ledger and keeps the receipt. Idempotent on `decision_id`. |
+| `write_receipt(receipt)` | authorised doors (a key issued by the office), or a firm's own agent paying per receipt under x402 (no key: the door answers 402 with the offer) | Write a receipt: the door verifies the issuer's signature against its keyring, writes the hash to the ledger and keeps the receipt. Idempotent on `decision_id`. |
 
 The same receipt is a page at `https://rco-a2a.ai/receipts/{decision_id}` and JSON at `https://rco-a2a.ai/receipts/{decision_id}.json`.
 
@@ -43,10 +43,14 @@ The same receipt is a page at `https://rco-a2a.ai/receipts/{decision_id}` and JS
 
 ## Verify a receipt
 
-1. Signature: take `kid` from the signature's protected header and fetch that key from the issuing door's keyring (named in the receipt); verify the detached JWS over the canonical JSON of the receipt (keys sorted, compact, UTF-8) without the signature, signature check and ledger fields.
+1. Signature: take `kid` from the signature's protected header and fetch that key from the issuing door's keyring (named in the receipt); verify the detached JWS over the canonical JSON of the receipt (keys sorted, compact, UTF-8) without `signature`, `signature_check`, `ledger`, `receipt_url`, `page`, `writer` and `x402_settlement` (the last two are the door's labels, added after the check). Hub receipts: without `hub_signature`, `hub_signature_check`, `ledger`, `receipt_url`, `page`.
 2. Ledger: the receipt's `ledger.transaction_id` on `gsc-rco-ledger.confidential-ledger.azure.com`; the hash preimage is the RFC 8785 canonical JSON of the receipt without `ledger`, `receipt_url`, `page` and the signature check. Ledger identity certificate: https://identity.confidential-ledger.core.azure.com/ledgerIdentity/gsc-rco-ledger
 
 Verification proves what the issuer stated; it does not make the operator a regulator.
+
+## The day's set
+
+`GET https://mcp.rco-a2a.ai/receipts/day/<YYYY-MM-DD>.json` — every receipt lodged that UTC day and its ledger receipt; the office copies it nightly to its ark (rco-ark, Object Lock). Counts: `GET https://mcp.rco-a2a.ai/receipts/stats.json`.
 
 ## Examples
 
