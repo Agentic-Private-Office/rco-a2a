@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Record of Cleared Orders</title>
+<meta name="office-rev" content="office0928" />
+<meta name="description" content="RCO — Record of Cleared Orders. A signed, hash-chained receipt for every agentic order a gate clears, retrievable by decision id. Two MCP tools: write_receipt, verify_receipt. Ledger held by the Agentic Private Office." />
+<meta property="og:title" content="Record of Cleared Orders" />
+<meta property="og:description" content="A signed receipt for every agentic order a gate clears, retrievable by decision id. Two MCP tools: write_receipt, verify_receipt." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://rco-a2a.ai/" />
+<meta property="og:image" content="https://rco-a2a.ai/icon-1024.png" />
+<meta name="theme-color" content="#000000" />
+<link rel="canonical" href="https://rco-a2a.ai/" />
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
+<link rel="alternate" type="application/json" href="/.well-known/agent-card.json" title="Agent Card" />
+<link rel="stylesheet" href="/styles.css" />
+<script src="/chrome.js" defer></script>
+</head>
+<body>
+
+<header class="gh"><div class="gh-in"><a href="/" class="gh-brand" aria-label="Record of Cleared Orders — home"><img src="/akgh-icon-64.png" alt="" class="brand-signet" width="28" height="28" /><span class="brand-mark">Record of Cleared Orders</span></a><a class="gh-entity" href="https://agent-kg.ai/" rel="noopener">Agentic KG Holdings</a><nav class="gh-nav" aria-label="Primary"><a href="#record">The record</a><a href="#tools">The two tools</a><a href="#verify">Verify</a></nav><div class="gh-act"><button class="gh-theme" id="gh-theme" type="button" aria-label="Light or dark" aria-pressed="false"><svg class="gi i-moon" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></svg><svg class="gi i-sun" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg></button><a class="g-btn g-btn-p gh-pill" href="https://mcp.rco-a2a.ai/mcp">Door →</a></div></div></header>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">AGENTIC KG HOLDINGS  ·  RECORD OF CLEARED ORDERS  ·  AS OF {{as_of}}</div>
+    <h1 class="hero-h1">Record of Cleared Orders</h1>
+    <p class="entity-line"><img src="/akgh-icon-64.png" alt="" class="entity-mark" width="64" height="64" /><a href="https://agent-kg.ai/" rel="noopener">Agentic KG Holdings</a></p>
+    <p class="hero-p">RCO is the Record of Cleared Orders. A receipt is written when a gate clears an agentic order: <code>{decision_id, gtin, market, actor_class, rule_version, cleared_at, writer, prev_hash, hash, sig, kid}</code>. Each receipt is hash-chained to the one before it and signed by the office key. Two tools, nothing else: <code>write_receipt</code>, authenticated with one bearer token per writer, returns the decision id; <code>verify_receipt</code>, public, returns the receipt, its signature and the key to check it.</p>
+  </div>
+</header>
+
+<main id="main">
+
+<section id="record" class="section section-dark">
+  <div class="sec-inner">
+    <div class="sec-eyebrow">§1 THE RECORD</div>
+    <h2 class="sec-h2">One receipt per cleared order</h2>
+    <ul class="line-list">
+      <li><code>decision_id</code> — the gate's id for the decision; the key a receipt is retrieved by.</li>
+      <li><code>gtin</code> · <code>market</code> · <code>actor_class</code> · <code>rule_version</code> · <code>cleared_at</code> — what was cleared, where, for whom, under which rule, when.</li>
+      <li><code>writer</code> — the gate that wrote it, named by its token.</li>
+      <li><code>prev_hash</code> · <code>hash</code> — the chain: each receipt's hash covers the one before it; the first receipt's <code>prev_hash</code> is sha256 of nothing.</li>
+      <li><code>sig</code> · <code>kid</code> — the office's Ed25519 signature over the hash, and the key id that checks it on the <a href="/.well-known/jwks.json">keyring</a>.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="tools" class="section">
+  <div class="sec-inner">
+    <div class="sec-eyebrow">§2 THE TWO TOOLS</div>
+    <h2 class="sec-h2">Model Context Protocol (MCP) door</h2>
+    <div class="sec-prose"><p>Door: <a href="https://mcp.rco-a2a.ai/mcp">https://mcp.rco-a2a.ai/mcp</a> — streamable HTTP, stateless, JSON-RPC 2.0, typed errors.</p></div>
+    <ul class="line-list">
+      <li><code>write_receipt</code> — <code>Authorization: Bearer &lt;writer token&gt;</code>. Arguments <code>gtin</code>, <code>market</code>, <code>actor_class</code>, <code>rule_version</code>, <code>cleared_at</code> (and <code>decision_id</code> when the gate minted one). Returns the <code>decision_id</code>. Idempotent on <code>decision_id</code>.</li>
+      <li><code>verify_receipt</code> — public. Argument <code>decision_id</code>. Returns the receipt, its chain position, its signature and the public key (JWK) that checks it.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="verify" class="section section-dark">
+  <div class="sec-inner">
+    <div class="sec-eyebrow">§3 VERIFY</div>
+    <h2 class="sec-h2">The verify URL</h2>
+    <div class="sec-prose"><p><code>https://rco-a2a.ai/receipts/{decision_id}</code> — the same answer as <code>verify_receipt</code>, over GET, for any client. Keyring: <a href="/.well-known/jwks.json">/.well-known/jwks.json</a>. Machine register: <a href="/llms.txt">/llms.txt</a>. Agent Card: <a href="/.well-known/agent-card.json">/.well-known/agent-card.json</a>.</p></div>
+  </div>
+</section>
+
+</main>
+
+<section class="gband" aria-label="Agentic Private Office"><div class="gb-in"><p class="gb1">Agentic Private Office — Matthew Keddy</p><p class="gb2">The Agentic Private Office — agents, keys, tenancies and the record, under one signature.</p></div></section>
+<footer class="footer">
+  <div class="footer-bottom">
+    <span class="entity-line entity-line-footer">© 2026 <img src="/akgh-icon-64.png" alt="" class="entity-mark" width="64" height="64" /><a href="https://agent-kg.ai/" rel="noopener">Agentic KG Holdings</a></span>
+    <span class="footer-sep">·</span>
+    <span>Surface {{version}} · as of {{as_of}}</span>
+    <span class="footer-sep">·</span>
+    <a href="https://mcp.rco-a2a.ai/mcp">Door</a>
+    <span class="footer-sep">·</span>
+    <a href="/.well-known/agent-card.json">Agent Card</a>
+    <span class="footer-sep">·</span>
+    <a href="/.well-known/jwks.json">Keyring</a>
+    <span class="footer-sep">·</span>
+    <a href="/llms.txt">llms.txt</a>
+    <span class="footer-sep">·</span>
+    <a href="/status">Status</a>
+    <span class="footer-sep">·</span>
+    <a href="/terms">Terms of Use</a>
+    <span class="footer-sep">·</span>
+    <a href="/privacy">Privacy</a>
+    <span class="footer-sep">·</span>
+    <a href="/security">Report a Security Issue</a>
+    <span class="footer-sep">·</span>
+    <a href="/no-cookies">No cookies</a>
+  </div>
+</footer>
+
+</body>
+</html>

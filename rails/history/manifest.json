@@ -1,0 +1,24 @@
+{
+ "rows": 25728,
+ "ledger_entries": 25732,
+ "duplicates_skipped": 4,
+ "with_cleared_at": 25701,
+ "writers": {
+  "None": 25,
+  "allooloo": 25703
+ },
+ "first": {
+  "decision_id": "gate_8ac4260b7269b6346c10",
+  "ledger_txn": "5.3403",
+  "cleared_at": null,
+  "writer": null
+ },
+ "last": {
+  "decision_id": "dec_b73fe75bff87ef889d8ca304",
+  "ledger_txn": "5.55368",
+  "cleared_at": "2026-10-27T21:00:26.362Z",
+  "writer": "allooloo"
+ },
+ "tip_hash": "sha256:c4657f214f21046e96a3a43e759a256652e9939136cec192035c7c6cc9586052",
+ "files": 13
+}

@@ -1,0 +1,5 @@
+node_modules/
+.wrangler/
+rails/history/*.sql
+rails/dns-*.json
+*.pre-*

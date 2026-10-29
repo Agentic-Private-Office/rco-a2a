@@ -1,77 +1,59 @@
-# RCO-A2A
+# RCO-A2A — Record of Cleared Orders
 
-> rco-a2a.ai — RCO, the Record of Cleared Orders: the signed receipt of one cleared decision, read by decision id. mcp.rco-a2a.ai
-
-**Owner of record:** Agentic KG Holdings (the Agentic Private Office, github.com/Agentic-Private-Office), from 2026-10-23. The standard is MIT-licensed and implemented by both companies' doors (GreenCore Solutions Corp. and Allooloo Technologies Corp.), and by any licensed firm's agent with a write key. Reads are free; write keys are issued by the office at no charge to implementers.
-
-RCO is the Record of Cleared Orders: a signed, machine-verifiable record of one cleared decision. When an agent's door clears a decision — an issuer resolved, a product cleared under a rule, a signal returned — it leaves one receipt. The receipt is the thing a compliance officer is asked for, and the thing a licensed participant's agent must be able to produce. The standard's page is https://rco-10060.org/.
-
-The earlier reading of RCO (a "regulatory compliance object", a product's compliance state per jurisdiction) is retired. Its five v1 tools are not on the wire; its schemas stay under `schema/v1.2` … `v1.4` as history.
-
-Canonical endpoint: https://mcp.rco-a2a.ai/mcp (streamable-http, JSON-RPC 2.0, typed errors).
-
-## The receipt
-
-| Field | What it holds |
-| --- | --- |
-| `decision_id` | the id the decision was given by the door that made it |
-| object identifier | what was cleared: a GTIN, an ISIN, a product id — the identifier says what kind of order it was |
-| `actor_class` | for which actor class (never a person) |
-| rule object and version | under which rule the decision was made |
-| records read | which records were read, each with its signature (kid) |
-| signal | ACM-200 · ACM-403 · ACM-404 · ACM-451 (https://acm-68000.org/) |
-| time | when |
-| issuing door | which door issued it |
-| signature | the issuing door's detached JWS, verifiable against its published keyring |
-| ledger | the Azure Confidential Ledger (gsc-rco-ledger) transaction id under which the receipt's hash was written |
-
-One schema for every object type. No caller data, no personal data, no amounts.
-
-## Tools
-
-| Tool | Who | What it does |
-| --- | --- | --- |
-| `get_receipt(decision_id)` | anyone, no account | Return the signed receipt of one cleared decision. |
-| `write_receipt(receipt)` | authorised doors (a key issued by the office), or a firm's own agent paying per receipt under x402 (no key: the door answers 402 with the offer) | Write a receipt: the door verifies the issuer's signature against its keyring, writes the hash to the ledger and keeps the receipt. Idempotent on `decision_id`. |
-
-The same receipt is a page at `https://rco-a2a.ai/receipts/{decision_id}` and JSON at `https://rco-a2a.ai/receipts/{decision_id}.json`.
-
-## Writers and readers
-
-- **Writers:** the hub gates of A2A Grocery, A2A Cosmetics and A2A Peptides; Allooloo's resolver (getissuer) and market nodes; any licensed firm's own agent through the write path with a key.
-- **Readers:** anyone — the firm's audit function, its regulator, its counterparty.
-
-## Verify a receipt
-
-1. Signature: take `kid` from the signature's protected header and fetch that key from the issuing door's keyring (named in the receipt); verify the detached JWS over the canonical JSON of the receipt (keys sorted, compact, UTF-8) without `signature`, `signature_check`, `ledger`, `receipt_url`, `page`, `writer` and `x402_settlement` (the last two are the door's labels, added after the check). Hub receipts: without `hub_signature`, `hub_signature_check`, `ledger`, `receipt_url`, `page`.
-2. Ledger: the receipt's `ledger.transaction_id` on `gsc-rco-ledger.confidential-ledger.azure.com`; the hash preimage is the RFC 8785 canonical JSON of the receipt without `ledger`, `receipt_url`, `page` and the signature check. Ledger identity certificate: https://identity.confidential-ledger.core.azure.com/ledgerIdentity/gsc-rco-ledger
-
-Verification proves what the issuer stated; it does not make the operator a regulator.
-
-## The day's set
-
-`GET https://mcp.rco-a2a.ai/receipts/day/<YYYY-MM-DD>.json` — every receipt lodged that UTC day and its ledger receipt; the office copies it nightly to its ark (rco-ark, Object Lock). Counts: `GET https://mcp.rco-a2a.ai/receipts/stats.json`.
-
-## Examples
-
-`examples/get_receipt.py` reads one live receipt (Python 3 standard library) and prints it:
+RCO is the Record of Cleared Orders. A receipt is written when a gate clears an agentic order:
 
 ```
-python examples/get_receipt.py gate_dec1d9aaa478b3ef94e4
+{decision_id, gtin, market, actor_class, rule_version, cleared_at, writer, prev_hash, hash, sig, kid}
 ```
 
-The walks of the retired v1 tools are kept as history under `examples/v1-retired/`; they do not run against the current door.
+Each receipt is hash-chained to the one before it and signed by the office key. Two tools, nothing else:
 
-## Doors by what they resolve
+- `write_receipt` — authenticated (`Authorization: Bearer <writer token>`, one token per writer), returns `decision_id`. Idempotent on `decision_id`.
+- `verify_receipt(decision_id)` — public, returns the receipt, its chain position, its signature and the key to check it.
 
-GTINs → https://gtinfetch.ai/mcp · listed issuers → https://mcp.getissuer.ai/mcp · receipts → https://mcp.rco-a2a.ai/mcp
+Door: `https://mcp.rco-a2a.ai/mcp` (Model Context Protocol, streamable HTTP, stateless, JSON-RPC 2.0). Page and kit: `https://rco-a2a.ai/`. Verify URL: `https://rco-a2a.ai/receipts/{decision_id}`. Ledger held by the Agentic Private Office.
 
-## Sources on the wire
+## The chain
 
-https://rco-a2a.ai · https://rco-10060.org · https://status.rco-a2a.ai · https://acm-68000.org
+- `hash` = `sha256:` + hex of SHA-256 over the canonical JSON of `{actor_class, cleared_at, decision_id, gtin, market, prev_hash, rule_version, writer}` — keys sorted, no whitespace, nulls kept.
+- The first receipt's `prev_hash` is `sha256:` + 64 zeros.
+- `sig` = Ed25519 (EdDSA) over the UTF-8 bytes of the `hash` string, base64url. `kid` names the key on `https://rco-a2a.ai/.well-known/jwks.json` (`rco-office-2026-10`).
+- Receipts loaded from the ledger era (2026-10-15 → 2026-10-27) carry `kid` `gsc-rco-2026-08`, `sig` null, and the Azure Confidential Ledger transaction that holds their original hash. Fields the ledger never held are null.
 
-Registry listing: `io.github.Agentic-Private-Office/rco-a2a`. Anthropic connector directory: rco-a2a.
+## Connect
 
----
+MCP client configuration (any client that speaks streamable HTTP):
 
-© 2026 Agentic KG Holdings · reference operator · MIT licence. The door runs on GreenCore Solutions Corp. compute; the ledger, keys and door are unchanged by the ownership line.
+```json
+{ "mcpServers": { "rco-a2a": { "type": "streamable-http", "url": "https://mcp.rco-a2a.ai/mcp" } } }
+```
+
+Verify one receipt from a shell:
+
+```bash
+curl -s https://mcp.rco-a2a.ai/mcp -H 'content-type: application/json' -H 'accept: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"verify_receipt","arguments":{"decision_id":"dec_b73fe75bff87ef889d8ca304"}}}'
+```
+
+or `GET https://rco-a2a.ai/receipts/dec_b73fe75bff87ef889d8ca304`.
+
+Check a signature (Python):
+
+```python
+import json, base64, requests
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+r = requests.get("https://rco-a2a.ai/receipts/" + DECISION_ID).json()
+k = next(k for k in requests.get("https://rco-a2a.ai/.well-known/jwks.json").json()["keys"] if k["kid"] == r["receipt"]["kid"])
+pad = lambda s: s + "=" * (-len(s) % 4)
+Ed25519PublicKey.from_public_bytes(base64.urlsafe_b64decode(pad(k["x"]))).verify(base64.urlsafe_b64decode(pad(r["receipt"]["sig"])), r["receipt"]["hash"].encode())
+```
+
+## Errors
+
+Typed, inside the tool result (`isError: true`): `not_authorised` · `invalid_receipt` · `invalid_decision_id` · `not_found` · `store_unavailable` · `store_error` · `chain_contention`.
+
+## Source
+
+`worker/` — the Cloudflare Worker (`index.js` routes and kit, `mcp.js` the two tools, `chain.js` the record and its chain, `export.js` the nightly copy to the office's S3 bucket). `schema.sql` — the D1 table, append-only (triggers refuse UPDATE and DELETE). `public/` — the office page and the five record pages. `rails/` — the history loader and the D1 rail. No secret is in this repository.
+
+MIT. © 2026 Agentic KG Holdings.

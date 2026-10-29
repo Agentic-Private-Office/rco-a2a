@@ -1,0 +1,32 @@
+# rco-door — RCO-01 (CEO order 2026-10-29): the Record of Cleared Orders door. Two tools (write_receipt, verify_receipt), D1 store rco-receipts,
+# Ed25519 kid rco-office-2026-10, nightly export to s3://rco-receipts-copy (AWS 159822161213). Office account of record dd2832… (ruling 2026-09-19).
+# Custom domains replace the two grey records to the Azure origin (mcp c173b499…, apex f4c8501c…). The old container app is untouched here (step 6).
+name = "rco-door"
+main = "worker/index.js"
+compatibility_date = "2026-10-01"
+account_id = "dd2832b36f171b815f84c8487aada36b"
+workers_dev = false
+routes = [
+  { pattern = "mcp.rco-a2a.ai", custom_domain = true },
+  { pattern = "rco-a2a.ai",     custom_domain = true }
+]
+
+[triggers]
+crons = ["30 5 * * *"]   # nightly export of the full table (UTC); puts only when EXPORT_KEY_ID / EXPORT_SECRET are placed (the CEO's hand)
+
+[vars]
+VERSION = "2.0.0"
+KID = "rco-office-2026-10"
+EXPORT_BUCKET = "rco-receipts-copy"
+EXPORT_REGION = "us-east-1"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+[observability]
+enabled = true
+
+# [[d1_databases]] — appended by rails/d1_up.sh once the account token carries D1 scope (RCO-01 step 1, the CEO's hand):
+# binding = "DB", database_name = "rco-receipts", database_id = "<uuid from wrangler d1 create>"
