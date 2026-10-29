@@ -26,12 +26,14 @@ for e in sorted(led, key=lambda x: tuple(int(p) for p in x['txn'].split('.'))):
     row = {'decision_id': d, 'gtin': None, 'market': None, 'actor_class': None, 'rule_version': None, 'cleared_at': times.get(d), 'writer': e.get('writer'), 'prev_hash': prev}
     row['hash'] = H(row); row['sig'] = None; row['kid'] = 'gsc-rco-2026-08'; row['ledger_txn'] = e['txn']; row['ledger_hash'] = e.get('hash')
     rows.append(row); prev = row['hash']
-N = 2000
+N, S = 2000, 150   # rows per file, rows per INSERT statement (D1 caps one statement at 100 KB; a row is ~330 bytes)
+COLS = ['decision_id', 'gtin', 'market', 'actor_class', 'rule_version', 'cleared_at', 'writer', 'prev_hash', 'hash', 'sig', 'kid', 'ledger_txn', 'ledger_hash']
 for i in range(0, len(rows), N):
     chunk = rows[i:i + N]
     with open(os.path.join(OUT, f'{i // N:03d}.sql'), 'w', encoding='utf-8') as f:
-        f.write('INSERT INTO receipts (decision_id,gtin,market,actor_class,rule_version,cleared_at,writer,prev_hash,hash,sig,kid,ledger_txn,ledger_hash) VALUES\n')
-        f.write(',\n'.join('(' + ','.join(q(r[k]) for k in ['decision_id', 'gtin', 'market', 'actor_class', 'rule_version', 'cleared_at', 'writer', 'prev_hash', 'hash', 'sig', 'kid', 'ledger_txn', 'ledger_hash']) + ')' for r in chunk) + ';\n')
+        for j in range(0, len(chunk), S):
+            f.write('INSERT INTO receipts (' + ','.join(COLS) + ') VALUES\n')
+            f.write(',\n'.join('(' + ','.join(q(r[k]) for k in COLS) + ')' for r in chunk[j:j + S]) + ';\n')
 json.dump({'rows': len(rows), 'ledger_entries': len(led), 'duplicates_skipped': dups, 'with_cleared_at': sum(1 for r in rows if r['cleared_at']), 'writers': dict(collections.Counter(str(r['writer']) for r in rows)),
            'first': {k: rows[0][k] for k in ['decision_id', 'ledger_txn', 'cleared_at', 'writer']}, 'last': {k: rows[-1][k] for k in ['decision_id', 'ledger_txn', 'cleared_at', 'writer']}, 'tip_hash': rows[-1]['hash'], 'files': (len(rows) + N - 1) // N},
           open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8'), indent=1)

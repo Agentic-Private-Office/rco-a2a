@@ -14,14 +14,14 @@ const notFound = (p) => new Response(JSON.stringify({ error: "not_found", path: 
 const wantsMd = (r) => { const a = r.headers.get("accept") || ""; return a.includes("text/markdown") && (a.indexOf("text/markdown") < (a.indexOf("text/html") < 0 ? 1e9 : a.indexOf("text/html"))); };
 const strip = (s) => s.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 function toMarkdown(html) {
-  let b = (html.match(/<main[\s\S]*?<\/main>/i) || [html])[0];
+  let b = (html.match(/<header class="hero">[\s\S]*?<\/main>/i) || html.match(/<main[\s\S]*?<\/main>/i) || [html])[0];   // the hero carries the definition; the twin keeps the same words
   b = b.replace(/<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g, (_, h, t) => `[${strip(t)}](${h.startsWith("/") ? ORIGIN + h : h})`);
   b = b.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/g, (_, t) => `\n# ${strip(t)}\n`).replace(/<h2[^>]*>([\s\S]*?)<\/h2>/g, (_, t) => `\n## ${strip(t)}\n`).replace(/<h3[^>]*>([\s\S]*?)<\/h3>/g, (_, t) => `\n### ${strip(t)}\n`);
   b = b.replace(/<li[^>]*>([\s\S]*?)<\/li>/g, (_, t) => `- ${strip(t)}\n`).replace(/<p[^>]*>([\s\S]*?)<\/p>/g, (_, t) => `${strip(t)}\n\n`).replace(/<code[^>]*>([\s\S]*?)<\/code>/g, "`$1`");
   return strip(b.replace(/\n/g, "\u0000")).replace(/\u0000/g, "\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
 }
 async function page(env, file, request) {
-  const r = await env.ASSETS.fetch(new Request(ORIGIN + file, { method: "GET" }));
+  const r = await env.ASSETS.fetch(new Request(new URL(request.url).origin + file, { method: "GET", redirect: "manual" }));
   if (r.status !== 200) return notFound(file);
   const html = (await r.text()).replaceAll("{{version}}", env.VERSION).replaceAll("{{as_of}}", "2026-10-29");
   if (wantsMd(request)) return new Response(toMarkdown(html), { status: 200, headers: { "content-type": "text/markdown; charset=utf-8", vary: "Accept", "cache-control": "public, max-age=300" } });

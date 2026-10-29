@@ -24,9 +24,16 @@ EXPORT_REGION = "us-east-1"
 directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
+html_handling = "none"        # the Worker serves the pages itself; no /index.html → / redirect inside ASSETS.fetch
+not_found_handling = "none"   # a missing asset is a real 404, never an HTML fallback
 
 [observability]
 enabled = true
 
 # [[d1_databases]] — appended by rails/d1_up.sh once the account token carries D1 scope (RCO-01 step 1, the CEO's hand):
 # binding = "DB", database_name = "rco-receipts", database_id = "<uuid from wrangler d1 create>"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rco-receipts"
+database_id = "111a8a79-4a2b-47e5-81a3-c7b7ab4dd4c6"
