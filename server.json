@@ -2,9 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Agentic-Private-Office/rco-a2a",
   "title": "RCO-A2A - Record of Cleared Orders",
-  "description": "A signed receipt for every agentic order a gate clears, retrievable by decision id. Two MCP tools: write_receipt, verify_receipt. Ledger held by the Agentic Private Office.",
+  "description": "Signed receipt per cleared agentic order, by decision id. Two tools: write_receipt, verify_receipt.",
   "version": "2.0.0",
   "websiteUrl": "https://rco-a2a.ai",
-  "repository": { "url": "https://github.com/Agentic-Private-Office/rco-a2a", "source": "github" },
-  "remotes": [ { "type": "streamable-http", "url": "https://mcp.rco-a2a.ai/mcp" } ]
+  "repository": {
+    "url": "https://github.com/Agentic-Private-Office/rco-a2a",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.rco-a2a.ai/mcp"
+    }
+  ]
 }
