@@ -36,6 +36,7 @@ export default {
     // the door host answers the door and the kit; its root tells an agent where the page is
     if (host.startsWith("mcp.")) {
       if (path === "/mcp") return withLink(await handleMcp(request, env, url));
+      if (path === "/stats" || path === "/stats.json") return withLink(await statsLine(env, path === "/stats.json"));
       if (path === "/" || path === "/health.json") return withLink(J({ status: "ok", door: DOOR, page: ORIGIN + "/", tools: ["write_receipt", "verify_receipt"], version: env.VERSION, store: env.DB ? "bound" : "not bound", time: new Date().toISOString() }));
       if (path === "/receipts/stats.json") return withLink(await stats(env));
       if (KIT[path]) return withLink(KIT[path](env));
@@ -47,6 +48,7 @@ export default {
     if (path === "/health.json") return withLink(J({ status: "ok", surface: ORIGIN, door: DOOR, version: env.VERSION, store: env.DB ? "bound" : "not bound", export: await exportStatus(env), time: new Date().toISOString() }));
     if (path === "/export/status.json") return withLink(J(await exportStatus(env)));
     if (path === "/receipts/stats.json") return withLink(await stats(env));
+    if (path === "/stats" || path === "/stats.json") return withLink(await statsLine(env, path === "/stats.json"));   // RECEIPTS-01: counts only, no caller data
     const m = /^\/receipts\/([a-z]{2,12}_[0-9a-f]{8,48})$/.exec(path);
     if (m) { const r = await verifyReceipt(env, m[1]); const body = r.structuredContent; return withLink(new Response(JSON.stringify(body, null, 1), { status: r.isError ? (body.code === "not_found" ? 404 : body.code === "store_unavailable" ? 503 : 400) : 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": r.isError ? "no-store" : "public, max-age=31536000, immutable", "access-control-allow-origin": "*" } })); }
     if (PAGES[path]) return withLink(await page(env, PAGES[path], request));
@@ -54,6 +56,23 @@ export default {
     return a.status === 200 ? a : withLink(notFound(path));
   },
 };
+
+// RECEIPTS-01: the /stats line — counts only (total, by day, by writer, by market), never a caller or an id.
+async function statsLine(env, json) {
+  if (!env.DB) return J({ store: "not bound" });
+  const day = new Date().toISOString().slice(0, 10), yday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const [tot, bd, bw, bm] = await Promise.all([
+    env.DB.prepare("SELECT COUNT(*) n FROM receipts").first(),
+    env.DB.prepare("SELECT substr(cleared_at,1,10) d, COUNT(*) n FROM receipts WHERE cleared_at >= date('now','-30 days') GROUP BY d ORDER BY d").all(),
+    env.DB.prepare("SELECT COALESCE(writer,'unattributed') w, COUNT(*) n FROM receipts GROUP BY w ORDER BY n DESC").all(),
+    env.DB.prepare("SELECT market, COUNT(*) n FROM receipts WHERE market IS NOT NULL GROUP BY market ORDER BY n DESC").all(),
+  ]);
+  const by_day = Object.fromEntries(bd.results.map((r) => [r.d, r.n])), by_writer = Object.fromEntries(bw.results.map((r) => [r.w, r.n])), by_market = Object.fromEntries(bm.results.map((r) => [r.market, r.n]));
+  const o = { receipts: tot.n, today: by_day[day] || 0, last_full_day: { day: yday, receipts: by_day[yday] || 0 }, by_day, by_writer, by_market, as_of: new Date().toISOString(), note: "counts only" };
+  if (json) return J(o);
+  const line = `receipts ${o.receipts} · today ${o.today} · ${yday} ${o.last_full_day.receipts} · writers ${Object.entries(by_writer).map(([k, v]) => `${k} ${v}`).join(", ")} · markets ${Object.keys(by_market).length} · as of ${o.as_of}\n`;
+  return new Response(line, { status: 200, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
+}
 
 // Counts for the Allooloo digest (RCO-A-01 reads /receipts/stats.json nightly): by_day_writer · by_writer · ledger.pending (always 0 here: the chain is the store).
 async function stats(env) {
