@@ -37,7 +37,6 @@ export default {
     if (host.startsWith("mcp.")) {
       if (path === "/mcp") return withLink(await handleMcp(request, env, url));
       if (path === "/" || path === "/health.json") return withLink(J({ status: "ok", door: DOOR, page: ORIGIN + "/", tools: ["write_receipt", "verify_receipt"], version: env.VERSION, store: env.DB ? "bound" : "not bound", time: new Date().toISOString() }));
-      if (path === "/receipts/stats.json") return withLink(await stats(env));
       if (KIT[path]) return withLink(KIT[path](env));
       return withLink(notFound(path));
     }
@@ -46,7 +45,6 @@ export default {
     if (KIT[path]) return withLink(KIT[path](env));
     if (path === "/health.json") return withLink(J({ status: "ok", surface: ORIGIN, door: DOOR, version: env.VERSION, store: env.DB ? "bound" : "not bound", export: await exportStatus(env), time: new Date().toISOString() }));
     if (path === "/export/status.json") return withLink(J(await exportStatus(env)));
-    if (path === "/receipts/stats.json") return withLink(await stats(env));
     const m = /^\/receipts\/([a-z]{2,12}_[0-9a-f]{8,48})$/.exec(path);
     if (m) { const r = await verifyReceipt(env, m[1]); const body = r.structuredContent; return withLink(new Response(JSON.stringify(body, null, 1), { status: r.isError ? (body.code === "not_found" ? 404 : body.code === "store_unavailable" ? 503 : 400) : 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": r.isError ? "no-store" : "public, max-age=31536000, immutable", "access-control-allow-origin": "*" } })); }
     if (PAGES[path]) return withLink(await page(env, PAGES[path], request));
@@ -56,17 +54,4 @@ export default {
 };
 
 // CEO ruling 2026-10-29: all RCO stats are private at all times — /stats and /stats.json removed; no usage counts on any RCO surface.
-
-// Counts for the Allooloo digest (RCO-A-01 reads /receipts/stats.json nightly): by_day_writer · by_writer · ledger.pending (always 0 here: the chain is the store).
-async function stats(env) {
-  if (!env.DB) return J({ door: DOOR, store: "not bound", by_writer: {}, by_day_writer: {}, ledger: { pending: 0 } });
-  const [bw, bdw, tip] = await Promise.all([
-    env.DB.prepare("SELECT writer, COUNT(*) n FROM receipts GROUP BY writer").all(),
-    env.DB.prepare("SELECT substr(cleared_at,1,10) d, writer, COUNT(*) n FROM receipts WHERE cleared_at >= date('now','-35 days') GROUP BY d, writer").all(),
-    env.DB.prepare("SELECT seq, hash, decision_id, written_at FROM receipts ORDER BY seq DESC LIMIT 1").first(),
-  ]);
-  const by_writer = {}, by_day_writer = {};
-  for (const r of bw.results) by_writer[r.writer ?? "unattributed"] = r.n;
-  for (const r of bdw.results) (by_day_writer[r.d] ||= {})[r.writer ?? "unattributed"] = r.n;
-  return J({ door: DOOR, total: tip ? tip.seq : 0, tip: tip ? { seq: tip.seq, hash: tip.hash, decision_id: tip.decision_id, written_at: tip.written_at } : null, by_writer, by_day_writer, ledger: { pending: 0, note: "the chain is the store; nothing is deferred" }, keyring: ORIGIN + "/.well-known/jwks.json" });
-}
+// /receipts/stats.json closed 2026-10-29 (CEO ruling: RCO stats private); the Allooloo digest reads the private readout instead.
