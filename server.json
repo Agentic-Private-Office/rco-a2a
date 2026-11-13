@@ -3,7 +3,7 @@
   "name": "io.github.Agentic-Private-Office/rco-a2a",
   "title": "RCO-A2A - Record of Cleared Orders",
   "description": "Signed receipt per cleared agentic order, by decision id. Two tools: write_receipt, verify_receipt.",
-  "version": "2.0.0",
+  "version": "2.6.6",
   "websiteUrl": "https://rco-a2a.ai",
   "repository": {
     "url": "https://github.com/Agentic-Private-Office/rco-a2a",
